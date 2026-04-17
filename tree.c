@@ -156,7 +156,7 @@ int tree_from_index(ObjectID *id_out) {
         tree.count++;
     }
 
-    /* Serialize tree */
+   /* Serialize tree */
     void *data;
     size_t len;
 
@@ -164,8 +164,13 @@ int tree_from_index(ObjectID *id_out) {
         return -1;
     }
 
-    free(data);
+/* Write tree object to store */
+    if (object_write(OBJ_TREE, data, len, id_out) != 0) {
+        free(data);
+        return -1;
+    }
 
-    (void)id_out;
-    return 0;
+free(data);
+
+return 0;
 }
