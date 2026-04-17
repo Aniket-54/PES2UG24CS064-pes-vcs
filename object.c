@@ -134,9 +134,42 @@ int object_write(ObjectType type, const void *data, size_t len, ObjectID *id_out
 
 /* Create shard directory if it doesn't exist */
     mkdir(dir, 0755);
+    /* Create temporary file path */
+    char tmp_path[512];
+    snprintf(tmp_path, sizeof(tmp_path), "%s.tmp", path);
+
+/* Open temp file */
+    int fd = open(tmp_path, O_CREAT | O_WRONLY | O_TRUNC, 0644);
+    if (fd < 0) {
+        free(buffer);
+        return -1;
+    }
+
+/* Write object data */
+    if (write(fd, buffer, total_len) != (ssize_t)total_len) {
+        close(fd);
+        free(buffer);
+        return -1;
+    }
+
+/* Flush file to disk */
+    fsync(fd);
+    close(fd);
+
+/* Atomically move temp file to final path */
+    rename(tmp_path, path);
+
+/* Sync directory to persist rename */
+    int dir_fd = open(dir, O_RDONLY);
+    if (dir_fd >= 0) {
+        fsync(dir_fd);
+        close(dir_fd);
+    }
 
     free(buffer);
     return 0;
+
+   
     }
 
 // Read an object from the store.
