@@ -117,10 +117,27 @@ int object_write(ObjectType type, const void *data, size_t len, ObjectID *id_out
     /* Compute hash of full object */
     compute_hash(buffer, total_len, id_out);
 
-    free(buffer);
+/* Deduplication: if object already exists, return */
+    if (object_exists(id_out)) {
+        free(buffer);
+        return 0;
+    }
+    /* Determine final object path */
+    char path[512];
+    object_path(id_out, path, sizeof(path));
 
+/* Extract shard directory (.pes/objects/XX) */
+    char dir[512];
+    strncpy(dir, path, sizeof(dir));
+    char *slash = strrchr(dir, '/');
+    if (slash) *slash = '\0';
+
+/* Create shard directory if it doesn't exist */
+    mkdir(dir, 0755);
+
+    free(buffer);
     return 0;
-}
+    }
 
 // Read an object from the store.
 //
