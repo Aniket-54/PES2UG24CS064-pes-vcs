@@ -270,7 +270,8 @@ int index_add(Index *index, const char *path) {
         }
 
         e = &index->entries[index->count++];
-        strncpy(e->path, path, sizeof(e->path));
+        strncpy(e->path, path, sizeof(e->path) - 1);
+        e->path[sizeof(e->path) - 1] = '\0';
     }
 
     e->mode = st.st_mode;
