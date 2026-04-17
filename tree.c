@@ -134,14 +134,26 @@ int tree_from_index(ObjectID *id_out) {
 
     Index index;
 
-    /* Load staged files */
     if (index_load(&index) != 0) {
         return -1;
     }
 
-    /* For now we only verify index loads correctly */
     if (index.count == 0) {
         return -1;
+    }
+
+    Tree tree;
+    tree.count = 0;
+
+    for (int i = 0; i < index.count; i++) {
+
+        TreeEntry *entry = &tree.entries[tree.count];
+
+        entry->mode = index.entries[i].mode;
+        strcpy(entry->name, index.entries[i].path);
+        entry->hash = index.entries[i].hash;
+
+        tree.count++;
     }
 
     (void)id_out;
