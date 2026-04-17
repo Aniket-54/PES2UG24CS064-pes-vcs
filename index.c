@@ -136,21 +136,36 @@ int index_status(const Index *index) {
 // Returns 0 on success, -1 on error.
 int index_load(Index *idx) {
 
-    FILE *f = fopen(INDEX_FILE, "rb");
+    FILE *f = fopen(INDEX_FILE, "r");
 
     if (!f) {
         idx->count = 0;
         return 0;
     }
 
-    if (fread(&idx->count, sizeof(int), 1, f) != 1) {
-        fclose(f);
-        return -1;
-    }
+    idx->count = 0;
 
-    if (fread(idx->entries, sizeof(IndexEntry), idx->count, f) != (size_t)idx->count) {
-        fclose(f);
-        return -1;
+    while (idx->count < MAX_INDEX_ENTRIES) {
+
+        IndexEntry *e = &idx->entries[idx->count];
+
+        char hash_hex[HASH_HEX_SIZE + 1];
+
+        if (fscanf(f, "%o %64s %ld %ld %s",
+                   &e->mode,
+                   hash_hex,
+                   &e->mtime_sec,
+                   &e->size,
+                   e->path) != 5) {
+            break;
+        }
+
+        if (hex_to_hash(hash_hex, &e->hash) != 0) {
+            fclose(f);
+            return -1;
+        }
+
+        idx->count++;
     }
 
     fclose(f);
